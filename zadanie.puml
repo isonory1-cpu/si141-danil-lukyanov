@@ -1,0 +1,49 @@
+@startuml
+skinparam style strictuml
+actor Покупатель as User
+participant Корзина as Cart
+participant Склад as Stock
+participant "Система оплаты" as Payment
+
+autonumber
+
+User -> Cart : Оформить заказ ()
+activate Cart
+
+Cart -> Stock : Проверить наличие товара ()
+activate Stock
+alt Товар в наличии
+    Stock --> Cart : Товар доступен
+    Cart -> Stock : Зарезервировать товар ()
+    Stock --> Cart : Товар зарезервирован
+    deactivate Stock
+    
+    Cart -> Payment : Запрос на оплату (Сумма)
+    activate Payment
+    Payment --> User : Форма ввода платежных данных
+    User -> Payment : Ввести данные карты ()
+    
+    alt Оплата успешна
+        Payment -> Payment : Провести транзакцию ()
+        Payment --> Cart : Оплата подтверждена
+        Cart --> User : Заказ успешно оформлен и подтвержден
+    else Ошибка оплаты
+        Payment --> Cart : Ошибка транзакции
+        deactivate Payment
+        Cart -> Stock : Отменить резерв ()
+        activate Stock
+        Stock --> Cart : Резерв снят
+        deactivate Stock
+        Cart --> User : Ошибка оплаты. Заказ отменен
+    end
+    
+else Товар отсутствует
+    activate Stock
+    Stock --> Cart : Товар закончился
+    deactivate Stock
+    Cart --> User : Ошибка: товара нет на складе
+    deactivate Cart
+end
+
+@endum
+@enduml
